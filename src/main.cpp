@@ -68,7 +68,11 @@ void AppMain() {
     if(!glfwInit())
         throw std::runtime_error("glfwInit failed");
 
-    /* Create a windowed mode window and its OpenGL context */
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
     window = glfwCreateWindow(SCREEN_SIZE.x, SCREEN_SIZE.y, "JiNXGL", NULL, NULL);
 
     if (!window)
@@ -77,17 +81,17 @@ void AppMain() {
         throw std::runtime_error("could not create window");
     }
 
-    // glewExperimental = GL_TRUE; //stops glew crashing on OSX :-/
+    glewExperimental = GL_TRUE; //stops glew crashing on OSX :-/
     // if(glewInit() != GLEW_OK)
     //     throw std::runtime_error("glewInit failed");
 
     glfwMakeContextCurrent(window);
-/*
+
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
-*/
+
     // if(!GLEW_VERSION_3_2)
     //     throw std::runtime_error("OpenGL 3.2 API is not available.");
 
