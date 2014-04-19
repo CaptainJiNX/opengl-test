@@ -2,6 +2,15 @@
 	"folders":
 	[
 		{
+			"file_exclude_patterns":
+			[
+				"opengl-test.sublime-project",
+				".tundra2.*"
+			],
+			"folder_exclude_patterns":
+			[
+				"t2-output"
+			],
 			"follow_symlinks": true,
 			"path": "."
 		}
