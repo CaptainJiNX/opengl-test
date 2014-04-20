@@ -30,7 +30,7 @@ bool restart_gl_log() {
 	return true;
 }
 
-bool gl_log(const char* message, ...) {
+bool gl_log_err(const char* message, ...) {
 	va_list argptr;
 	FILE* file = fopen(GL_LOG_FILE, "a");
 
@@ -55,6 +55,10 @@ static std::vector<tdogl::Shader> LoadShaders() {
 	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("vertex-shader.txt") ,GL_VERTEX_SHADER));
 	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("fragment-shader.txt"), GL_FRAGMENT_SHADER));
 	return shaders;
+}
+
+void glfw_error_callback (int error, const char* description) {
+	gl_log_err("GLFW ERROR: code %i msg: %s\n", error, description);
 }
 
 void error_callback(int error, const char* description)
