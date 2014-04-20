@@ -1,4 +1,4 @@
-#include <OpenGL/gl.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
@@ -29,8 +29,8 @@ static void LoadShaders() {
 }
 
 static void LoadTriangle() {
-	glGenVertexArraysAPPLE(1, &gVAO);
-	glBindVertexArrayAPPLE(gVAO);
+	glGenVertexArrays(1, &gVAO);
+	glBindVertexArray(gVAO);
 
 	glGenBuffers(1, &gVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
@@ -47,7 +47,7 @@ static void LoadTriangle() {
 	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArrayAPPLE(0);
+	glBindVertexArray(0);
 }
 
 static void Render() {
@@ -55,26 +55,32 @@ static void Render() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(gProgram->object());
-	glBindVertexArrayAPPLE(gVAO);
+	glBindVertexArray(gVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	//glBindVertexArrayAPPLE(0);
-	//glUseProgram(0);
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+
+void error_callback(int error, const char* description)
+{
+    fputs(description, stderr);
 }
 
 void AppMain() {
 
-	GLFWwindow* window;
-
     if(!glfwInit())
         throw std::runtime_error("glfwInit failed");
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwSetErrorCallback(error_callback);
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    window = glfwCreateWindow(SCREEN_SIZE.x, SCREEN_SIZE.y, "JiNXGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCREEN_SIZE.x, SCREEN_SIZE.y, "JiNXGL", NULL, NULL);
+    // GLFWwindow* window = glfwCreateWindow(SCREEN_SIZE.x, SCREEN_SIZE.y, "JiNXGL", glfwGetPrimaryMonitor(), NULL);
 
     if (!window)
     {
@@ -83,6 +89,9 @@ void AppMain() {
     }
 
     glfwMakeContextCurrent(window);
+
+	glewExperimental = GL_TRUE;
+	glewInit();
 
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
