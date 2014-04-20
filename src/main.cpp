@@ -30,20 +30,43 @@ bool restart_gl_log() {
 	return true;
 }
 
-bool gl_log_err(const char* message, ...) {
-	va_list argptr;
-	FILE* file = fopen(GL_LOG_FILE, "a");
+bool gl_log (const char* message, ...) {
+  va_list argptr;
+  FILE* file = fopen (GL_LOG_FILE, "a");
+  if (!file) {
+    fprintf (
+      stderr,
+      "ERROR: could not open GL_LOG_FILE %s file for appending\n",
+      GL_LOG_FILE
+    );
+    return false;
+  }
+  va_start (argptr, message);
+  vfprintf (file, message, argptr);
+  va_end (argptr);
+  fclose (file);
+  return true;
+}
 
-	if(!file){
-		fprintf(stderr, "ERROR: could not open GL_LOG_FILE %s for appending\n", GL_LOG_FILE);
-		return false;
-	}
-
-	va_start(argptr, message);
-	vfprintf(file, message, argptr);
-	va_end(argptr);
-	fclose(file);
-	return true;
+bool gl_log_err (const char* message, ...) {
+  va_list argptr;
+  FILE* file = fopen (GL_LOG_FILE, "a");
+  if (!file) {
+    fprintf (
+      stderr,
+      "ERROR: could not open GL_LOG_FILE %s file for appending\n",
+      GL_LOG_FILE
+    );
+    return false;
+  }
+  va_start (argptr, message);
+  vfprintf (file, message, argptr);
+  va_end (argptr);
+  va_start (argptr, message);
+  vfprintf (stderr, message, argptr);
+  va_end (argptr);
+  fclose (file);
+  return true;
 }
 
 static std::string ResourcePath(std::string fileName) {
@@ -61,17 +84,16 @@ void glfw_error_callback (int error, const char* description) {
 	gl_log_err("GLFW ERROR: code %i msg: %s\n", error, description);
 }
 
-void error_callback(int error, const char* description)
-{
-    fputs(description, stderr);
-}
+int main() {
+	assert(restart_gl_log());
 
-void AppMain() {
+	gl_log ("starting GLFW\n%s\n", glfwGetVersionString ());
+	glfwSetErrorCallback (glfw_error_callback);
 
-    if(!glfwInit())
-        throw std::runtime_error("glfwInit failed");
-
-    glfwSetErrorCallback(error_callback);
+	if (!glfwInit ()) {
+		fprintf (stderr, "ERROR: could not start GLFW3\n");
+		return 1;
+	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
@@ -134,17 +156,4 @@ void AppMain() {
     }
 
     glfwTerminate();
-}
-
-
-int main (int argc, char* argv[])
-{
-	try {
-        AppMain();
-    } catch (const std::exception& e){
-        std::cerr << "ERROR: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
 }
