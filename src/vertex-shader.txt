@@ -1,8 +1,7 @@
-#version 150
+#version 400
 
-in vec3 vert;
+in vec3 vp;
 
 void main() {
-    // does not alter the verticies at all
-    gl_Position = vec4(vert, 1);
+    gl_Position = vec4(vp, 1);
 }
