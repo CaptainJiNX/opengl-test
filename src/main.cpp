@@ -13,7 +13,17 @@
 
 #include "Program.h"
 
-const glm::vec2 SCREEN_SIZE(1024, 768);
+// keep track of window size for things like the viewport and the mouse cursor
+int g_gl_width = 640;
+int g_gl_height = 480;
+
+// a call-back function
+void glfw_window_size_callback (GLFWwindow* window, int width, int height) {
+  g_gl_width = width;
+  g_gl_height = height;
+
+  /* update any perspective matrices used here */
+}
 
 bool restart_gl_log() {
 	FILE* file = fopen(GL_LOG_FILE, "w");
@@ -69,6 +79,54 @@ bool gl_log_err (const char* message, ...) {
   return true;
 }
 
+void log_gl_params () {
+  GLenum params[] = {
+    GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS,
+    GL_MAX_CUBE_MAP_TEXTURE_SIZE,
+    GL_MAX_DRAW_BUFFERS,
+    GL_MAX_FRAGMENT_UNIFORM_COMPONENTS,
+    GL_MAX_TEXTURE_IMAGE_UNITS,
+    GL_MAX_TEXTURE_SIZE,
+    GL_MAX_VARYING_FLOATS,
+    GL_MAX_VERTEX_ATTRIBS,
+    GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS,
+    GL_MAX_VERTEX_UNIFORM_COMPONENTS,
+    GL_MAX_VIEWPORT_DIMS,
+    GL_STEREO,
+  };
+  const char* names[] = {
+    "GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS",
+    "GL_MAX_CUBE_MAP_TEXTURE_SIZE",
+    "GL_MAX_DRAW_BUFFERS",
+    "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS",
+    "GL_MAX_TEXTURE_IMAGE_UNITS",
+    "GL_MAX_TEXTURE_SIZE",
+    "GL_MAX_VARYING_FLOATS",
+    "GL_MAX_VERTEX_ATTRIBS",
+    "GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS",
+    "GL_MAX_VERTEX_UNIFORM_COMPONENTS",
+    "GL_MAX_VIEWPORT_DIMS",
+    "GL_STEREO",
+  };
+  gl_log ("GL Context Params:\n");
+  char msg[256];
+  // integers - only works if the order is 0-10 integer return types
+  for (int i = 0; i < 10; i++) {
+    int v = 0;
+    glGetIntegerv (params[i], &v);
+    gl_log ("%s %i\n", names[i], v);
+  }
+  // others
+  int v[2];
+  v[0] = v[1] = 0;
+  glGetIntegerv (params[10], v);
+  gl_log ("%s %i %i\n", names[10], v[0], v[1]);
+  unsigned char s = 0;
+  glGetBooleanv (params[11], &s);
+  gl_log ("%s %u\n", names[11], (unsigned int)s);
+  gl_log ("-----------------------------\n");
+}
+
 static std::string ResourcePath(std::string fileName) {
 	return "./../../src/" + fileName;
 }
@@ -84,6 +142,24 @@ void glfw_error_callback (int error, const char* description) {
 	gl_log_err("GLFW ERROR: code %i msg: %s\n", error, description);
 }
 
+void _update_fps_counter(GLFWwindow* window) {
+	static double previous_seconds = glfwGetTime();
+	static int frame_count;
+	double current_seconds = glfwGetTime();
+	double elapsed_seconds = current_seconds - previous_seconds;
+
+	if(elapsed_seconds > 0.25) {
+		previous_seconds = current_seconds;
+		double fps = (double)frame_count / elapsed_seconds;
+		char tmp[128];
+		sprintf(tmp, "opengl @ fps: %.2f", fps);
+		glfwSetWindowTitle(window, tmp);
+		frame_count = 0;
+	}
+
+	frame_count++;
+}
+
 int main() {
 	assert(restart_gl_log());
 
@@ -95,32 +171,43 @@ int main() {
 		return 1;
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(SCREEN_SIZE.x, SCREEN_SIZE.y, "JiNXGL", NULL, NULL);
-    // GLFWwindow* window = glfwCreateWindow(SCREEN_SIZE.x, SCREEN_SIZE.y, "JiNXGL", glfwGetPrimaryMonitor(), NULL);
+	glfwWindowHint(GLFW_SAMPLES, 4);
+
+
+	// GLFWmonitor* mon = glfwGetPrimaryMonitor ();
+	// const GLFWvidmode* vmode = glfwGetVideoMode (mon);
+	// GLFWwindow* window = glfwCreateWindow (
+	// 	vmode->width, vmode->height, "Extended GL Init", mon, NULL
+	// );
+
+    GLFWwindow* window = glfwCreateWindow(g_gl_width, g_gl_height, "JiNXGL", NULL, NULL);
 
     if (!window)
     {
+    	fprintf (stderr, "ERROR: could not open window with GLFW3\n");
         glfwTerminate();
-        throw std::runtime_error("could not create window");
+        return -1;
     }
 
     glfwMakeContextCurrent(window);
+	glfwSetWindowSizeCallback (window, glfw_window_size_callback);
 
 	glewExperimental = GL_TRUE;
 	glewInit();
 
+	const GLubyte* renderer = glGetString (GL_RENDERER);
+	const GLubyte* version = glGetString (GL_VERSION);
+	printf ("Renderer: %s\n", renderer);
+	printf ("OpenGL version supported %s\n", version);
+	log_gl_params();
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-
-    std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-    std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-    std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
-    std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
 
     std::vector<tdogl::Shader> shaders = LoadShaders();
 	tdogl::Program* gProgram = new tdogl::Program(shaders);
@@ -145,7 +232,9 @@ int main() {
 
     while (!glfwWindowShouldClose(window))
     {
+    	_update_fps_counter(window);
  		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glViewport (0, 0, g_gl_width, g_gl_height);
  		glUseProgram(gProgram->object());
 
  		glBindVertexArray(vao);
@@ -153,7 +242,12 @@ int main() {
 
     	glfwSwapBuffers(window);
         glfwPollEvents();
+
+		if (GLFW_PRESS == glfwGetKey (window, GLFW_KEY_ESCAPE)) {
+			glfwSetWindowShouldClose (window, 1);
+		}
     }
 
     glfwTerminate();
+    return 0;
 }
