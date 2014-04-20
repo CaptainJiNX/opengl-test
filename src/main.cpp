@@ -7,59 +7,38 @@
 #include <stdexcept>
 #include <cmath>
 
+#include <time.h>
+#include <stdarg.h>
+#define GL_LOG_FILE "gl.log"
+
 #include "Program.h"
 
 const glm::vec2 SCREEN_SIZE(1024, 768);
 
-tdogl::Program* gProgram = NULL;
-GLuint gVAO = 0;
-GLuint gVBO = 0;
+bool restart_gl_log() {
+	FILE* file = fopen(GL_LOG_FILE, "w");
+
+	if(!file) {
+		fprintf(stderr, "ERROR: could not open GL_LOG_FILE log file %s for writing\n", GL_LOG_FILE);
+		return false;
+	}
+
+	time_t now = time(NULL);
+	char* date = ctime(&now);
+	fprintf(file, "GL_LOG_FILE log. local time %s\n", date);
+	fclose(file);
+	return true;
+}
 
 static std::string ResourcePath(std::string fileName) {
 	return "./../../src/" + fileName;
 }
 
-static void LoadShaders() {
+static std::vector<tdogl::Shader> LoadShaders() {
 	std::vector<tdogl::Shader> shaders;
-    tdogl::Shader vs = tdogl::Shader::shaderFromFile(ResourcePath("vertex-shader.txt") ,GL_VERTEX_SHADER);
-    tdogl::Shader fs = tdogl::Shader::shaderFromFile(ResourcePath("fragment-shader.txt"), GL_FRAGMENT_SHADER);
-	shaders.push_back(vs);
-	shaders.push_back(fs);
-	gProgram = new tdogl::Program(shaders);
-}
-
-static void LoadTriangle() {
-	glGenVertexArrays(1, &gVAO);
-	glBindVertexArray(gVAO);
-
-	glGenBuffers(1, &gVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-
-	GLfloat vertexData[] = {
-		 0.0f, 0.8f, 0.0f,
-		-0.8f,-0.8f, 0.0f,
-		 0.8f,-0.8f, 0.0f,
-	};
-
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(gProgram->attrib("vert"));
-	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-}
-
-static void Render() {
-	glClearColor(0, 0, 128, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glUseProgram(gProgram->object());
-	glBindVertexArray(gVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-
-	glBindVertexArray(0);
-	glUseProgram(0);
+	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("vertex-shader.txt") ,GL_VERTEX_SHADER));
+	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("fragment-shader.txt"), GL_FRAGMENT_SHADER));
+	return shaders;
 }
 
 void error_callback(int error, const char* description)
@@ -93,19 +72,44 @@ void AppMain() {
 	glewExperimental = GL_TRUE;
 	glewInit();
 
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
 
-    LoadShaders();
-    LoadTriangle();
+    std::vector<tdogl::Shader> shaders = LoadShaders();
+	tdogl::Program* gProgram = new tdogl::Program(shaders);
+
+	float points[] = {
+		0.0f, 0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f,
+		-0.5f, -0.5f, 0.0f,
+	};
+
+	GLuint vbo = 0;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), points, GL_STATIC_DRAW);
+
+	GLuint vao = 0;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
     while (!glfwWindowShouldClose(window))
     {
-    	Render();
+ 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+ 		glUseProgram(gProgram->object());
 
-        glfwSwapBuffers(window);
+ 		glBindVertexArray(vao);
+ 		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    	glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
