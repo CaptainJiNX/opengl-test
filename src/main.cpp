@@ -19,12 +19,34 @@
 int g_gl_width = 640;
 int g_gl_height = 480;
 
+mat4 proj_mat;
+
+mat4 calcProjMat() {
+	float near = 0.1f;
+	float far = 100.0f;
+	float fov = 67.0f * ONE_DEG_IN_RAD;
+	float aspect = (float)g_gl_width / (float)g_gl_height;
+
+	float range = tan(fov * 0.5f) * near;
+	float Sx = (2.0f * near) / (range * aspect + range * aspect);
+	float Sy = near / range;
+	float Sz = -(far + near) / (far - near);
+	float Pz = -(2.0f * far * near) / (far - near);
+
+	return mat4(
+		Sx, 0.0f, 0.0f, 0.0f,
+		0.0f, Sy, 0.0f, 0.0f,
+		0.0f, 0.0f, Sz, -1.0f,
+		0.0f, 0.0f, Pz, 0.0f
+	);
+}
+
 // a call-back function
 void glfw_window_size_callback (GLFWwindow* window, int width, int height) {
   g_gl_width = width;
   g_gl_height = height;
 
-  /* update any perspective matrices used here */
+  proj_mat = calcProjMat();
 }
 
 bool restart_gl_log() {
@@ -210,13 +232,12 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	glEnable (GL_CULL_FACE); // cull face
-	glCullFace (GL_BACK); // cull back face
-	glFrontFace (GL_CW); // GL_CCW for counter clock-wise
+	// glEnable (GL_CULL_FACE); // cull face
+	// glCullFace (GL_BACK); // cull back face
+	// glFrontFace (GL_CW); // GL_CCW for counter clock-wise
 
     std::vector<tdogl::Shader> shaders = LoadShaders();
 	tdogl::Program* gProgram = new tdogl::Program(shaders);
-	int matrix_location = gProgram->uniform("view_matrix");
 
 	vec3 points[] = {
 		vec3(0.0f, 0.5f, 0.0f),
@@ -225,12 +246,10 @@ int main() {
 	};
 
 	vec3 colors[] = {
+		vec3(1.0f, 1.0f, 0.0f),
+		vec3(1.0f, 0.5f, 0.0f),
 		vec3(1.0f, 0.0f, 0.0f),
-		vec3(0.0f, 1.0f, 0.0f),
-		vec3(0.0f, 0.0f, 1.0f),
 	};
-
-	mat4 view_matrix = identity_mat4();
 
 	unsigned int points_vbo = 0;
 	glGenBuffers(1, &points_vbo);
@@ -252,22 +271,32 @@ int main() {
 	glEnableVertexAttribArray (0);
 	glEnableVertexAttribArray (1);
 
-	float speed = 1.0f;
-	float last_position = 0.0f;
+	float cam_speed = 1.0f;
+	float cam_yaw_speed = 10.0f;
+
+	float cam_pos[] = { 0.0f, 0.0f, 2.0f };
+	float cam_yaw = 0.0f;
+
+	mat4 T = translate(identity_mat4(), vec3(-cam_pos[0], -cam_pos[1], -cam_pos[2]));
+	mat4 R = rotate_y_deg(identity_mat4(), -cam_yaw);
+	mat4 view_mat = R * T;
+
+	proj_mat = calcProjMat();
+
+	int view_mat_location = gProgram->uniform("view");
+	int proj_mat_location = gProgram->uniform("proj");
 
     while (!glfwWindowShouldClose(window))
     {
     	//_update_fps_counter(window);
     	double current_seconds = glfwGetTime();
 
- 		glUseProgram(gProgram->object());
- 		mat4 matrix = rotate_z_deg(view_matrix, current_seconds * 30);
-
- 		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, matrix.m);
+		glUseProgram(gProgram->object());
+		glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, view_mat.m);
+		glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, proj_mat.m);
 
  		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport (0, 0, g_gl_width * 2, g_gl_height * 2);
- 		glUseProgram(gProgram->object());
 
  		glBindVertexArray(vao);
  		glDrawArrays(GL_TRIANGLES, 0, 3);
