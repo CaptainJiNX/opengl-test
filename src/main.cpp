@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+#include <OpenGL/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
@@ -29,8 +29,8 @@ static void LoadShaders() {
 }
 
 static void LoadTriangle() {
-	glGenVertexArrays(1, &gVAO);
-	glBindVertexArray(gVAO);
+	glGenVertexArraysAPPLE(1, &gVAO);
+	glBindVertexArrayAPPLE(gVAO);
 
 	glGenBuffers(1, &gVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
@@ -40,13 +40,14 @@ static void LoadTriangle() {
 		-0.8f,-0.8f, 0.0f,
 		 0.8f,-0.8f, 0.0f,
 	};
+
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(gProgram->attrib("vert"));
 	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	glBindVertexArrayAPPLE(0);
 }
 
 static void Render() {
@@ -54,10 +55,10 @@ static void Render() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(gProgram->object());
-	//glBindVertexArray(gVAO);
-	//glDrawArrays(GL_TRIANGLES, 0, 3);
+	glBindVertexArrayAPPLE(gVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	//glBindVertexArray(0);
+	//glBindVertexArrayAPPLE(0);
 	//glUseProgram(0);
 }
 
@@ -68,8 +69,8 @@ void AppMain() {
     if(!glfwInit())
         throw std::runtime_error("glfwInit failed");
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
@@ -81,8 +82,6 @@ void AppMain() {
         throw std::runtime_error("could not create window");
     }
 
-    glewExperimental = GL_TRUE; //stops glew crashing on OSX :-/
-
     glfwMakeContextCurrent(window);
 
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
@@ -91,7 +90,7 @@ void AppMain() {
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
 
     LoadShaders();
-    //LoadTriangle();
+    LoadTriangle();
 
     while (!glfwWindowShouldClose(window))
     {
