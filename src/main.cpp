@@ -1,7 +1,5 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
 #include <glm/glm.hpp>
 
 #include <cassert>
@@ -11,7 +9,7 @@
 
 #include "Program.h"
 
-const glm::vec2 SCREEN_SIZE(800, 600);
+const glm::vec2 SCREEN_SIZE(1024, 768);
 
 tdogl::Program* gProgram = NULL;
 GLuint gVAO = 0;
@@ -23,8 +21,10 @@ static std::string ResourcePath(std::string fileName) {
 
 static void LoadShaders() {
 	std::vector<tdogl::Shader> shaders;
-	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("vertex-shader.txt"),GL_VERTEX_SHADER));
-	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("fragment-shader.txt"), GL_FRAGMENT_SHADER));
+    tdogl::Shader vs = tdogl::Shader::shaderFromFile(ResourcePath("vertex-shader.txt") ,GL_VERTEX_SHADER);
+    tdogl::Shader fs = tdogl::Shader::shaderFromFile(ResourcePath("fragment-shader.txt"), GL_FRAGMENT_SHADER);
+	shaders.push_back(vs);
+	shaders.push_back(fs);
 	gProgram = new tdogl::Program(shaders);
 }
 
@@ -50,15 +50,15 @@ static void LoadTriangle() {
 }
 
 static void Render() {
-	glClearColor(0, 0, 0, 1);
+	glClearColor(0, 0, 128, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(gProgram->object());
-	glBindVertexArray(gVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	//glBindVertexArray(gVAO);
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	glBindVertexArray(0);
-	glUseProgram(0);
+	//glBindVertexArray(0);
+	//glUseProgram(0);
 }
 
 void AppMain() {
@@ -82,8 +82,6 @@ void AppMain() {
     }
 
     glewExperimental = GL_TRUE; //stops glew crashing on OSX :-/
-    // if(glewInit() != GLEW_OK)
-    //     throw std::runtime_error("glewInit failed");
 
     glfwMakeContextCurrent(window);
 
@@ -92,11 +90,8 @@ void AppMain() {
     std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
 
-    // if(!GLEW_VERSION_3_2)
-    //     throw std::runtime_error("OpenGL 3.2 API is not available.");
-
     LoadShaders();
-    LoadTriangle();
+    //LoadTriangle();
 
     while (!glfwWindowShouldClose(window))
     {
