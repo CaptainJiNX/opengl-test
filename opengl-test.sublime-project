@@ -14,5 +14,10 @@
 			"follow_symlinks": true,
 			"path": "."
 		}
-	]
+	],
+	"settings":
+    {
+        "sublimegdb_workingdir": "${project_path:t2-output/macosx-clang-debug-default}",
+        "sublimegdb_commandline": "gdb --interpreter=mi ./JiNXGL"
+	}
 }
