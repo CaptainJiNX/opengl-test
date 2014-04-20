@@ -9,9 +9,11 @@
 
 #include <time.h>
 #include <stdarg.h>
+
+#include "maths_funcs.h"
+#include "Program.h"
 #define GL_LOG_FILE "gl.log"
 
-#include "Program.h"
 
 // keep track of window size for things like the viewport and the mouse cursor
 int g_gl_width = 640;
@@ -128,13 +130,13 @@ void log_gl_params () {
 }
 
 static std::string ResourcePath(std::string fileName) {
-	return "./../../src/" + fileName;
+	return "./../../src/resources/" + fileName;
 }
 
 static std::vector<tdogl::Shader> LoadShaders() {
 	std::vector<tdogl::Shader> shaders;
-	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("vertex-shader.txt") ,GL_VERTEX_SHADER));
-	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("fragment-shader.txt"), GL_FRAGMENT_SHADER));
+	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("test_vs.glsl") ,GL_VERTEX_SHADER));
+	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("test_fs.glsl"), GL_FRAGMENT_SHADER));
 	return shaders;
 }
 
@@ -208,33 +210,63 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
+	glEnable (GL_CULL_FACE); // cull face
+	glCullFace (GL_BACK); // cull back face
+	glFrontFace (GL_CW); // GL_CCW for counter clock-wise
 
     std::vector<tdogl::Shader> shaders = LoadShaders();
 	tdogl::Program* gProgram = new tdogl::Program(shaders);
+	int matrix_location = gProgram->uniform("view_matrix");
 
-	float points[] = {
-		0.0f, 0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
+	vec3 points[] = {
+		vec3(0.0f, 0.5f, 0.0f),
+		vec3(0.5f, -0.5f, 0.0f),
+		vec3(-0.5f, -0.5f, 0.0f),
 	};
 
-	GLuint vbo = 0;
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), points, GL_STATIC_DRAW);
+	vec3 colors[] = {
+		vec3(1.0f, 0.0f, 0.0f),
+		vec3(0.0f, 1.0f, 0.0f),
+		vec3(0.0f, 0.0f, 1.0f),
+	};
 
-	GLuint vao = 0;
+	mat4 view_matrix = identity_mat4();
+
+	unsigned int points_vbo = 0;
+	glGenBuffers(1, &points_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+
+	unsigned int colors_vbo = 0;
+	glGenBuffers(1, &colors_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+
+	unsigned int vao = 0;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray (0);
+	glEnableVertexAttribArray (1);
+
+	float speed = 1.0f;
+	float last_position = 0.0f;
 
     while (!glfwWindowShouldClose(window))
     {
-    	_update_fps_counter(window);
+    	//_update_fps_counter(window);
+    	double current_seconds = glfwGetTime();
+
+ 		glUseProgram(gProgram->object());
+ 		mat4 matrix = rotate_z_deg(view_matrix, current_seconds * 30);
+
+ 		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, matrix.m);
+
  		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glViewport (0, 0, g_gl_width, g_gl_height);
+		glViewport (0, 0, g_gl_width * 2, g_gl_height * 2);
  		glUseProgram(gProgram->object());
 
  		glBindVertexArray(vao);
