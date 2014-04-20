@@ -5,6 +5,8 @@ Build {
 			Name = "macosx-clang",
 			DefaultOnHost = "macosx",
 			Tools = { "clang-osx" },
+			Env = { CXXOPTS_DEBUG = "-g" },
+
 		},
 	},
 }
