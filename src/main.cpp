@@ -21,6 +21,14 @@ int g_gl_height = 480;
 
 mat4 proj_mat;
 
+float cam_speed = 3.0f;
+float cam_yaw_speed = 30.0f;
+
+float cam_pos[] = { 0.0f, 0.0f, 2.0f };
+float cam_yaw = 0.0f;
+
+mat4 view_mat;
+
 mat4 calcProjMat() {
 	float near = 0.1f;
 	float far = 100.0f;
@@ -39,6 +47,12 @@ mat4 calcProjMat() {
 		0.0f, 0.0f, Sz, -1.0f,
 		0.0f, 0.0f, Pz, 0.0f
 	);
+}
+
+mat4 calcViewMat() {
+	mat4 T = translate(identity_mat4(), vec3(-cam_pos[0], -cam_pos[1], -cam_pos[2]));
+	mat4 R = rotate_y_deg(identity_mat4(), -cam_yaw);
+	return R * T;
 }
 
 // a call-back function
@@ -166,23 +180,6 @@ void glfw_error_callback (int error, const char* description) {
 	gl_log_err("GLFW ERROR: code %i msg: %s\n", error, description);
 }
 
-void _update_fps_counter(GLFWwindow* window) {
-	static double previous_seconds = glfwGetTime();
-	static int frame_count;
-	double current_seconds = glfwGetTime();
-	double elapsed_seconds = current_seconds - previous_seconds;
-
-	if(elapsed_seconds > 0.25) {
-		previous_seconds = current_seconds;
-		double fps = (double)frame_count / elapsed_seconds;
-		char tmp[128];
-		sprintf(tmp, "opengl @ fps: %.2f", fps);
-		glfwSetWindowTitle(window, tmp);
-		frame_count = 0;
-	}
-
-	frame_count++;
-}
 
 int main() {
 	assert(restart_gl_log());
@@ -271,17 +268,8 @@ int main() {
 	glEnableVertexAttribArray (0);
 	glEnableVertexAttribArray (1);
 
-	float cam_speed = 3.0f;
-	float cam_yaw_speed = 30.0f;
-
-	float cam_pos[] = { 0.0f, 0.0f, 2.0f };
-	float cam_yaw = 0.0f;
-
-	mat4 T = translate(identity_mat4(), vec3(-cam_pos[0], -cam_pos[1], -cam_pos[2]));
-	mat4 R = rotate_y_deg(identity_mat4(), -cam_yaw);
-	mat4 view_mat = R * T;
-
 	proj_mat = calcProjMat();
+	view_mat = calcViewMat();
 
 	int view_mat_location = gProgram->uniform("view");
 	int proj_mat_location = gProgram->uniform("proj");
@@ -345,9 +333,7 @@ int main() {
 
 		// update view matrix
 		if (cam_moved) {
-		  mat4 T = translate(identity_mat4(), vec3(-cam_pos[0], -cam_pos[1], -cam_pos[2]));
-		  mat4 R = rotate_y_deg(identity_mat4(), -cam_yaw);
-		  view_mat = R * T;
+			view_mat = calcViewMat();
 		}
 
 
