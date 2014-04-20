@@ -30,6 +30,22 @@ bool restart_gl_log() {
 	return true;
 }
 
+bool gl_log(const char* message, ...) {
+	va_list argptr;
+	FILE* file = fopen(GL_LOG_FILE, "a");
+
+	if(!file){
+		fprintf(stderr, "ERROR: could not open GL_LOG_FILE %s for appending\n", GL_LOG_FILE);
+		return false;
+	}
+
+	va_start(argptr, message);
+	vfprintf(file, message, argptr);
+	va_end(argptr);
+	fclose(file);
+	return true;
+}
+
 static std::string ResourcePath(std::string fileName) {
 	return "./../../src/" + fileName;
 }
