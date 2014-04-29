@@ -28,6 +28,7 @@ float cam_pos[] = { 0.0f, 0.0f, 2.0f };
 float cam_yaw = 0.0f;
 
 mat4 view_mat;
+mat4 model_mat;
 
 mat4 calcProjMat() {
 	float near = 0.1f;
@@ -236,43 +237,57 @@ int main() {
     std::vector<tdogl::Shader> shaders = LoadShaders();
 	tdogl::Program* gProgram = new tdogl::Program(shaders);
 
+	// fixed point light properties
+	vec3 light_position_world = vec3 (10.0, 10.0, 10.0);
+	vec3 Ls = vec3 (1.0, 1.0, 1.0); // white specular colour
+	vec3 Ld = vec3 (0.7, 0.7, 0.7); // dull white diffuse light colour
+	vec3 La = vec3 (0.2, 0.2, 0.2); // grey ambient colour
+
+	// surface reflectance
+	vec3 Ks = vec3 (1.0, 1.0, 1.0); // fully reflect specular light
+	vec3 Kd = vec3 (1.0, 0.5, 0.0); // orange diffuse surface reflectance
+	vec3 Ka = vec3 (1.0, 1.0, 1.0); // fully reflect ambient light
+	float specular_exponent = 100.0; // specular 'power'
+
 	vec3 points[] = {
 		vec3(0.0f, 0.5f, 0.0f),
 		vec3(0.5f, -0.5f, 0.0f),
 		vec3(-0.5f, -0.5f, 0.0f),
 	};
 
-	vec3 colors[] = {
-		vec3(1.0f, 1.0f, 0.0f),
-		vec3(1.0f, 0.5f, 0.0f),
-		vec3(1.0f, 0.0f, 0.0f),
-	};
-
-	unsigned int points_vbo = 0;
+	GLuint points_vbo = 0;
 	glGenBuffers(1, &points_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 
-	unsigned int colors_vbo = 0;
-	glGenBuffers(1, &colors_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+	float normals[] = {
+	  0.0f, 0.0f, 1.0f,
+	  0.0f, 0.0f, 1.0f,
+	  0.0f, 0.0f, 1.0f,
+	};
 
-	unsigned int vao = 0;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	GLuint normals_vbo = 0;
+	glGenBuffers (1, &normals_vbo);
+	glBindBuffer (GL_ARRAY_BUFFER, normals_vbo);
+	glBufferData (GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
+
+	GLuint vao = 0;
+	glGenVertexArrays (1, &vao);
+	glBindVertexArray (vao);
+	glBindBuffer (GL_ARRAY_BUFFER, points_vbo);
+	glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL);
+	glBindBuffer (GL_ARRAY_BUFFER, normals_vbo);
+	glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL);
 	glEnableVertexAttribArray (0);
 	glEnableVertexAttribArray (1);
 
 	proj_mat = calcProjMat();
 	view_mat = calcViewMat();
+	model_mat = identity_mat4();
 
-	int view_mat_location = gProgram->uniform("view");
-	int proj_mat_location = gProgram->uniform("proj");
+	int view_mat_location = gProgram->uniform("view_mat");
+	int proj_mat_location = gProgram->uniform("projection_mat");
+	int model_mat_location = gProgram->uniform("model_mat");
 
     while (!glfwWindowShouldClose(window))
     {
@@ -282,9 +297,13 @@ int main() {
 		double elapsed_seconds = current_seconds - previous_seconds;
 		previous_seconds = current_seconds;
 
+		model_mat = rotate_y_deg(model_mat, elapsed_seconds * 100);
+		model_mat = rotate_z_deg(model_mat, elapsed_seconds * 50);
+
 		glUseProgram(gProgram->object());
 		glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, view_mat.m);
 		glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, proj_mat.m);
+		glUniformMatrix4fv(model_mat_location, 1, GL_FALSE, model_mat.m);
 
  		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport (0, 0, g_gl_width * 2, g_gl_height * 2);
