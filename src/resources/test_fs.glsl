@@ -2,6 +2,7 @@
 
 in vec3 position_eye, normal_eye;
 uniform mat4 view_mat;
+uniform float current_time;
 
 vec3 light_position_world = vec3(0.0, 0.0, 2.0);
 vec3 Ls = vec3(1.0, 1.0, 1.0);
@@ -16,6 +17,11 @@ float specular_exponent = 100.0;
 out vec4 fragment_color;
 
 void main() {
+
+	Kd.x = sin(current_time);
+	Kd.y = cos(current_time);
+	Kd.z = sin(current_time / 2);
+
 	vec3 Ia = La * Ka;
 
 	vec3 light_position_eye = vec3(view_mat * vec4(light_position_world, 1.0));

@@ -378,6 +378,7 @@ int main() {
 	int view_mat_location = gProgram->uniform("view_mat");
 	int proj_mat_location = gProgram->uniform("projection_mat");
 	int model_mat_location = gProgram->uniform("model_mat");
+	int current_time_location = gProgram->uniform("current_time");
 
     while (!glfwWindowShouldClose(window))
     {
@@ -395,6 +396,7 @@ int main() {
 		glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, view_mat.m);
 		glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, proj_mat.m);
 		glUniformMatrix4fv(model_mat_location, 1, GL_FALSE, model_mat.m);
+		glUniform1f(current_time_location, (float)current_seconds);
 
  		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport (0, 0, g_gl_width * 2, g_gl_height * 2);
