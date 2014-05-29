@@ -24,7 +24,7 @@ mat4 proj_mat;
 float cam_speed = 3.0f;
 float cam_yaw_speed = 30.0f;
 
-float cam_pos[] = { 0.0f, 0.0f, 2.0f };
+float cam_pos[] = { 0.0f, 0.0f, 3.0f };
 float cam_yaw = 0.0f;
 
 mat4 view_mat;
@@ -230,46 +230,136 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	// glEnable (GL_CULL_FACE); // cull face
-	// glCullFace (GL_BACK); // cull back face
-	// glFrontFace (GL_CW); // GL_CCW for counter clock-wise
+	glEnable (GL_CULL_FACE); // cull face
+	glCullFace (GL_BACK); // cull back face
+	glFrontFace (GL_CCW); // GL_CCW for counter clock-wise
 
     std::vector<tdogl::Shader> shaders = LoadShaders();
 	tdogl::Program* gProgram = new tdogl::Program(shaders);
 
-	// fixed point light properties
-	vec3 light_position_world = vec3 (10.0, 10.0, 10.0);
-	vec3 Ls = vec3 (1.0, 1.0, 1.0); // white specular colour
-	vec3 Ld = vec3 (0.7, 0.7, 0.7); // dull white diffuse light colour
-	vec3 La = vec3 (0.2, 0.2, 0.2); // grey ambient colour
-
-	// surface reflectance
-	vec3 Ks = vec3 (1.0, 1.0, 1.0); // fully reflect specular light
-	vec3 Kd = vec3 (1.0, 0.5, 0.0); // orange diffuse surface reflectance
-	vec3 Ka = vec3 (1.0, 1.0, 1.0); // fully reflect ambient light
-	float specular_exponent = 100.0; // specular 'power'
-
 	vec3 points[] = {
-		vec3(0.0f, 0.5f, 0.0f),
-		vec3(0.5f, -0.5f, 0.0f),
-		vec3(-0.5f, -0.5f, 0.0f),
+		// Front
+		vec3(0.0f, 0.0f, 0.0f),
+		vec3(0.0f, -1.0f, 0.0f),
+		vec3(1.0f, 0.0f, 0.0f),
+
+		vec3(0.0f, -1.0f, 0.0f),
+		vec3(1.0f, -1.0f, 0.0f),
+		vec3(1.0f, 0.0f, 0.0f),
+
+		// Top
+		vec3(0.0f, 0.0f, 0.0f),
+		vec3(1.0f, 0.0f, 0.0f),
+		vec3(0.0f, 0.0f, -1.0f),
+
+		vec3(1.0f, 0.0f, 0.0f),
+		vec3(1.0f, 0.0f, -1.0f),
+		vec3(0.0f, 0.0f, -1.0f),
+
+		// Left
+		vec3(0.0f, 0.0f, 0.0f),
+		vec3(0.0f, 0.0f, -1.0f),
+		vec3(0.0f, -1.0f, 0.0f),
+
+		vec3(0.0f, 0.0f, -1.0f),
+		vec3(0.0f, -1.0f, -1.0f),
+		vec3(0.0f, -1.0f, 0.0f),
+
+		// Back
+		vec3(1.0f, -1.0f, -1.0f),
+		vec3(0.0f, -1.0f, -1.0f),
+		vec3(1.0f, 0.0f, -1.0f),
+
+		vec3(0.0f, -1.0f, -1.0f),
+		vec3(0.0f, 0.0f, -1.0f),
+		vec3(1.0f, 0.0f, -1.0f),
+
+		// Bottom
+		vec3(1.0f, -1.0f, -1.0f),
+		vec3(1.0f, -1.0f, 0.0f),
+		vec3(0.0f, -1.0f, -1.0f),
+
+		vec3(1.0f, -1.0f, 0.0f),
+		vec3(0.0f, -1.0f, 0.0f),
+		vec3(0.0f, -1.0f, -1.0f),
+
+		// Right
+		vec3(1.0f, -1.0f, -1.0f),
+		vec3(1.0f, 0.0f, -1.0f),
+		vec3(1.0f, -1.0f, 0.0f),
+
+		vec3(1.0f, 0.0f, -1.0f),
+		vec3(1.0f, 0.0f, 0.0f),
+		vec3(1.0f, -1.0f, 0.0f),
 	};
+
+	int numberOfPoints = (sizeof(points) / sizeof(*points));
 
 	GLuint points_vbo = 0;
 	glGenBuffers(1, &points_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, numberOfPoints * 3 * sizeof(float), points, GL_STATIC_DRAW);
 
 	float normals[] = {
 	  0.0f, 0.0f, 1.0f,
 	  0.0f, 0.0f, 1.0f,
 	  0.0f, 0.0f, 1.0f,
+
+	  0.0f, 0.0f, 1.0f,
+	  0.0f, 0.0f, 1.0f,
+	  0.0f, 0.0f, 1.0f,
+
+
+	  0.0f, 1.0f, 0.0f,
+	  0.0f, 1.0f, 0.0f,
+	  0.0f, 1.0f, 0.0f,
+
+	  0.0f, 1.0f, 0.0f,
+	  0.0f, 1.0f, 0.0f,
+	  0.0f, 1.0f, 0.0f,
+
+
+	  -1.0f, 0.0f, 0.0f,
+	  -1.0f, 0.0f, 0.0f,
+	  -1.0f, 0.0f, 0.0f,
+
+	  -1.0f, 0.0f, 0.0f,
+	  -1.0f, 0.0f, 0.0f,
+	  -1.0f, 0.0f, 0.0f,
+
+
+	  0.0f, 0.0f, -1.0f,
+	  0.0f, 0.0f, -1.0f,
+	  0.0f, 0.0f, -1.0f,
+
+	  0.0f, 0.0f, -1.0f,
+	  0.0f, 0.0f, -1.0f,
+	  0.0f, 0.0f, -1.0f,
+
+	  0.0f, -1.0f, 0.0f,
+	  0.0f, -1.0f, 0.0f,
+	  0.0f, -1.0f, 0.0f,
+
+	  0.0f, -1.0f, 0.0f,
+	  0.0f, -1.0f, 0.0f,
+	  0.0f, -1.0f, 0.0f,
+
+
+	  1.0f, 0.0f, 0.0f,
+	  1.0f, 0.0f, 0.0f,
+	  1.0f, 0.0f, 0.0f,
+
+	  1.0f, 0.0f, 0.0f,
+	  1.0f, 0.0f, 0.0f,
+	  1.0f, 0.0f, 0.0f,
+
 	};
+
 
 	GLuint normals_vbo = 0;
 	glGenBuffers (1, &normals_vbo);
 	glBindBuffer (GL_ARRAY_BUFFER, normals_vbo);
-	glBufferData (GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
+	glBufferData (GL_ARRAY_BUFFER, numberOfPoints * 3 * sizeof(float), normals, GL_STATIC_DRAW);
 
 	GLuint vao = 0;
 	glGenVertexArrays (1, &vao);
@@ -283,7 +373,7 @@ int main() {
 
 	proj_mat = calcProjMat();
 	view_mat = calcViewMat();
-	model_mat = identity_mat4();
+	model_mat = translate(identity_mat4(), vec3(-0.5f, 0.5f, 0.5f));
 
 	int view_mat_location = gProgram->uniform("view_mat");
 	int proj_mat_location = gProgram->uniform("projection_mat");
@@ -297,8 +387,9 @@ int main() {
 		double elapsed_seconds = current_seconds - previous_seconds;
 		previous_seconds = current_seconds;
 
-		model_mat = rotate_y_deg(model_mat, elapsed_seconds * 100);
-		model_mat = rotate_z_deg(model_mat, elapsed_seconds * 50);
+		model_mat = rotate_x_deg(model_mat, elapsed_seconds * 45 * sin(current_seconds));
+		model_mat = rotate_y_deg(model_mat, elapsed_seconds * 120 * cos(current_seconds));
+		//model_mat = rotate_z_deg(model_mat, elapsed_seconds * 180 * sin(current_seconds));
 
 		glUseProgram(gProgram->object());
 		glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, view_mat.m);
@@ -309,7 +400,7 @@ int main() {
 		glViewport (0, 0, g_gl_width * 2, g_gl_height * 2);
 
  		glBindVertexArray(vao);
- 		glDrawArrays(GL_TRIANGLES, 0, 3);
+ 		glDrawArrays(GL_TRIANGLES, 0, numberOfPoints);
 
     	glfwSwapBuffers(window);
         glfwPollEvents();
