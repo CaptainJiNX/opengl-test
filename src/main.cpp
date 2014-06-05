@@ -172,8 +172,8 @@ static std::string ResourcePath(std::string fileName) {
 
 static std::vector<tdogl::Shader> LoadShaders() {
 	std::vector<tdogl::Shader> shaders;
-	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("test_vs.glsl") ,GL_VERTEX_SHADER));
-	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("test_fs.glsl"), GL_FRAGMENT_SHADER));
+	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("test_vs.vert") ,GL_VERTEX_SHADER));
+	shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("test_fs.frag"), GL_FRAGMENT_SHADER));
 	return shaders;
 }
 
