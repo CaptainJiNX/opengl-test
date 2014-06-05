@@ -18,9 +18,7 @@ out vec4 fragment_color;
 
 void main() {
 
-	Kd.x = sin(current_time);
-	Kd.y = cos(current_time);
-	Kd.z = sin(current_time / 2);
+	float t = current_time;
 
 	vec3 Ia = La * Ka;
 
