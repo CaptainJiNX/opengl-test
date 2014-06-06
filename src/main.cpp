@@ -10,6 +10,7 @@
 #include <stdarg.h>
 
 #include "maths_funcs.h"
+#include "stb_image.h"
 #include "Program.h"
 #define GL_LOG_FILE "gl.log"
 
@@ -176,6 +177,54 @@ static std::vector<tdogl::Shader> LoadShaders() {
 	return shaders;
 }
 
+static void LoadTextures() {
+	int x,y,n;
+	int force_channels = 4;
+	unsigned char* image_data = stbi_load(ResourcePath("texture.jpg").c_str(), &x, &y, &n, force_channels);
+	
+	if(!image_data){
+		gl_log_err("ERROR: could not load texture.jpg\n");
+	}
+
+	int width_in_bytes = x * 4;
+	unsigned char *top = NULL;
+	unsigned char *bottom = NULL;
+	unsigned char temp = 0;
+	int half_height = y / 2;
+
+	for (int row = 0; row < half_height; row++) {
+	  top = image_data + row * width_in_bytes;
+	  bottom = image_data + (y - row - 1) * width_in_bytes;
+	  for (int col = 0; col < width_in_bytes; col++) {
+	    temp = *top;
+	    *top = *bottom;
+	    *bottom = temp;
+	    top++;
+	    bottom++;
+	  }
+	}
+
+	unsigned int tex = 0;
+	glGenTextures (1, &tex);
+	glActiveTexture (GL_TEXTURE0);
+	glBindTexture (GL_TEXTURE_2D, tex);
+	glTexImage2D (
+	  GL_TEXTURE_2D,
+	  0,
+	  GL_RGBA,
+	  x,
+	  y,
+	  0,
+	  GL_RGBA,
+	  GL_UNSIGNED_BYTE,
+	  image_data
+	);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+}
+
 void glfw_error_callback (int error, const char* description) {
 	gl_log_err("GLFW ERROR: code %i msg: %s\n", error, description);
 }
@@ -234,6 +283,7 @@ int main() {
 	glFrontFace (GL_CCW); // GL_CCW for counter clock-wise
 
     std::vector<tdogl::Shader> shaders = LoadShaders();
+    LoadTextures();
 	tdogl::Program* gProgram = new tdogl::Program(shaders);
 
 	vec3 points[] = {
