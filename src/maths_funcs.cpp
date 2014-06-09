@@ -12,10 +12,10 @@
 | respectively. So, for example, to get values from a mat4 do: my_mat.m        |
 | A versor is the proper name for a unit quaternion.                           |
 \******************************************************************************/
+#define _USE_MATH_DEFINES
 #include "maths_funcs.h"
 #include <stdio.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 /*--------------------------------CONSTRUCTORS--------------------------------*/
 vec2::vec2 () {}
