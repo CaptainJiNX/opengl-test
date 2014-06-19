@@ -19,5 +19,13 @@
     {
         "sublimegdb_workingdir": "${project_path:t2-output/macosx-clang-debug-default}",
         "sublimegdb_commandline": "gdb --interpreter=mi ./JiNXGL"
-	}
+	},
+	"build_systems":
+    [
+        {
+            "name": "Tundra 2 (Project)",
+            "cmd": ["tundra2"],
+			"working_dir": "${project_path:${folder}}"
+        }
+    ]
 }
