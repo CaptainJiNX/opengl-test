@@ -7,6 +7,9 @@
 #include <stdexcept>
 #include <cmath>
 
+#include "tdogl/Program.h"
+#include "tdogl/Texture.h"
+
 static std::string ResourcePath(std::string fileName) {
     return "../../resources/" + fileName;
 }
