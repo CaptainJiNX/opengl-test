@@ -1,5 +1,9 @@
 #version 150
 
+uniform mat4 projection;
+uniform mat4 camera;
+uniform mat4 model;
+
 in vec3 vert;
 in vec2 vertTexCoord;
 
@@ -9,5 +13,6 @@ void main() {
     // Pass the tex coord straight through to the fragment shader
     fragTexCoord = vertTexCoord;
     
-    gl_Position = vec4(vert, 1);
+    // Apply all matrix transformations to vert
+    gl_Position = projection * camera * model * vec4(vert, 1);
 }
