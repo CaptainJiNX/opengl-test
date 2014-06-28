@@ -10,6 +10,7 @@
 
 #include "tdogl/Program.h"
 #include "tdogl/Texture.h"
+#include "tdogl/Camera.h"
 
 glm::vec2 SCREEN_SIZE(800, 600);
 
@@ -17,6 +18,7 @@ GLFWwindow* window = NULL;
 
 tdogl::Texture* gTexture = NULL;
 tdogl::Program* gProgram = NULL;
+tdogl::Camera gCamera;
 GLuint gVAO = 0;
 GLuint gVBO = 0;
 GLfloat gDegreesRotated = 0.0f;
@@ -25,22 +27,10 @@ static std::string ResourcePath(std::string fileName) {
     return "../../resources/" + fileName;
 }
 
-void SetProjection() {
-    bool programInUse = gProgram->isInUse();
-    if(!programInUse)
-        gProgram->use();
-
-    glm::mat4 projection = glm::perspective<float>(50.0, SCREEN_SIZE.x / SCREEN_SIZE.y, 0.1, 10.0);
-    gProgram->setUniform("projection", projection);
-
-    if(!programInUse)
-        gProgram->stopUsing();
-}
-
 void GlfwWindowSizeCallback (GLFWwindow* window, int width, int height) {
-  SCREEN_SIZE.x = width;
-  SCREEN_SIZE.y = height;
-  SetProjection();
+    SCREEN_SIZE.x = width;
+    SCREEN_SIZE.y = height;
+    gCamera.setViewportAspectRatio(SCREEN_SIZE.x / SCREEN_SIZE.y);
 }
 
 static void LoadShaders() {
@@ -48,15 +38,6 @@ static void LoadShaders() {
     shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("vertex-shader.vert"), GL_VERTEX_SHADER));
     shaders.push_back(tdogl::Shader::shaderFromFile(ResourcePath("fragment-shader.frag"), GL_FRAGMENT_SHADER));
     gProgram = new tdogl::Program(shaders);
-
-    gProgram->use();
-
-    SetProjection();
-
-    glm::mat4 camera = glm::lookAt(glm::vec3(3,3,3), glm::vec3(0,0,0), glm::vec3(0,1,0));
-    gProgram->setUniform("camera", camera);
-
-    gProgram->stopUsing();
 }
 
 // loads a cube into the VAO and VBO globals: gVAO and gVBO
@@ -145,6 +126,7 @@ static void Render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     gProgram->use();
+    gProgram->setUniform("camera", gCamera.matrix());
 
     gProgram->setUniform("model", glm::rotate(glm::mat4(), gDegreesRotated, glm::vec3(0,1,0)));
         
@@ -163,9 +145,39 @@ static void Render() {
 }
 
 void Update(float secondsElapsed) {
-    const GLfloat degreesPerSecond = 20.0f;
+    const GLfloat degreesPerSecond = 10.0f;
     gDegreesRotated += secondsElapsed * degreesPerSecond;
     while(gDegreesRotated > 360.0f) gDegreesRotated -= 360.0f;
+
+    //move position of camera based on WASD keys, and XZ keys for up and down
+    const float moveSpeed = 2.0; //units per second
+    if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_S)){
+        gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.forward());
+    } else if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_W)){
+        gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.forward());
+    }
+    if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_A)){
+        gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.right());
+    } else if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_D)){
+        gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.right());
+    }
+    if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_Z)){
+        gCamera.offsetPosition(secondsElapsed * moveSpeed * -glm::vec3(0,1,0));
+    } else if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_X)){
+        gCamera.offsetPosition(secondsElapsed * moveSpeed * glm::vec3(0,1,0));
+    }
+
+    const float rotateSpeed = 50.0;
+    if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_UP)){
+        gCamera.offsetOrientation(secondsElapsed * rotateSpeed, 0);
+    } else if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_DOWN)){
+        gCamera.offsetOrientation(secondsElapsed * -rotateSpeed, 0);
+    }
+    if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_LEFT)){
+        gCamera.offsetOrientation(0, secondsElapsed * -rotateSpeed);
+    } else if(GLFW_PRESS == glfwGetKey(window, GLFW_KEY_RIGHT)){
+        gCamera.offsetOrientation(0, secondsElapsed * rotateSpeed);
+    }
 }
 
 void AppMain() {
@@ -200,6 +212,9 @@ void AppMain() {
     LoadShaders();
     LoadTexture();
     LoadCube();
+
+    gCamera.setPosition(glm::vec3(0,0,4));
+    gCamera.setViewportAspectRatio(SCREEN_SIZE.x / SCREEN_SIZE.y);
 
     double lastTime = glfwGetTime();
 
