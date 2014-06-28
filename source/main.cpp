@@ -32,6 +32,8 @@ struct ModelAsset {
     GLenum drawType;
     GLint drawStart;
     GLint drawCount;
+    GLfloat shininess;
+    glm::vec3 specularColor;
 
     ModelAsset() :
         shaders(NULL),
@@ -40,7 +42,9 @@ struct ModelAsset {
         vao(0),
         drawType(GL_TRIANGLES),
         drawStart(0),
-        drawCount(0)
+        drawCount(0),
+        shininess(0.0f),
+        specularColor(1.0f, 1.0f, 1.0f)
     {}
 };
 
@@ -65,6 +69,8 @@ struct ModelInstance {
 struct Light {
     glm::vec3 position;
     glm::vec3 intensities; //a.k.a. the color of the light
+    float attenuation;
+    float ambientCoefficient;
 };
 
 glm::vec2 SCREEN_SIZE(800, 600);
@@ -108,6 +114,8 @@ static void LoadWoodenCrateAsset() {
     gWoodenCrate.drawStart = 0;
     gWoodenCrate.drawCount = 6*2*3;
     gWoodenCrate.texture = LoadTexture("wooden-crate.jpg");
+    gWoodenCrate.shininess = 80.0;
+    gWoodenCrate.specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
     glGenBuffers(1, &gWoodenCrate.vbo);
     glGenVertexArrays(1, &gWoodenCrate.vao);
 
@@ -233,9 +241,14 @@ static void RenderInstance(const ModelInstance& inst) {
     //set the shader uniforms
     shaders->setUniform("camera", gCamera.matrix());
     shaders->setUniform("model", inst.transform);
-    shaders->setUniform("tex", 0); //set to 0 because the texture will be bound to GL_TEXTURE0
+    shaders->setUniform("materialTex", 0); //set to 0 because the texture will be bound to GL_TEXTURE0
+    shaders->setUniform("materialShininess", asset->shininess);
+    shaders->setUniform("materialSpecularColor", asset->specularColor);
     shaders->setUniform("light.position", gLight.position);
     shaders->setUniform("light.intensities", gLight.intensities);
+    shaders->setUniform("light.attenuation", gLight.attenuation);    
+    shaders->setUniform("light.ambientCoefficient", gLight.ambientCoefficient);
+    shaders->setUniform("cameraPosition", gCamera.position());    
 
     //bind the texture
     glActiveTexture(GL_TEXTURE0);
@@ -351,6 +364,8 @@ void AppMain() {
 
     gLight.position = gCamera.position();
     gLight.intensities = glm::vec3(1,1,1); //white
+    gLight.attenuation = 0.2f;
+    gLight.ambientCoefficient = 0.005f;
 
     double lastTime = glfwGetTime();
 
