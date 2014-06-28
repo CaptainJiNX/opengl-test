@@ -1,8 +1,11 @@
 #version 400
 
 in vec3 position_eye, normal_eye;
+in vec2 texture_coord;
+
 uniform mat4 view_mat;
 uniform float current_time;
+uniform sampler2D tex;
 
 vec3 light_position_world = vec3(0.0, 0.0, 2.0);
 vec3 Ls = vec3(1.0, 1.0, 1.0);
@@ -10,14 +13,14 @@ vec3 Ld = vec3(0.7, 0.7, 0.7);
 vec3 La = vec3(0.2, 0.2, 0.2);
 
 vec3 Ks = vec3(1.0, 1.0, 1.0);
-vec3 Kd = vec3(1.0, 0.5, 0.0);
+vec3 Kd = vec3(1.0, 1.0, 1.0);
 vec3 Ka = vec3(1.0, 1.0, 1.0);
 float specular_exponent = 100.0;
 
 out vec4 fragment_color;
 
 void main() {
-
+	vec2 blahonga = texture_coord;
 	float t = current_time;
 
 	vec3 Ia = La * Ka;
@@ -36,5 +39,5 @@ void main() {
 	float specular_factor = pow(dot_prod_specular, specular_exponent);
 	vec3 Is = Ls * Ks * specular_factor;
 
-	fragment_color = vec4(Is + Id + Ia, 1.0);
+	fragment_color = vec4(Is + Id + Ia, 1.0) * texture(tex, texture_coord);
 }

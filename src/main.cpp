@@ -10,7 +10,7 @@
 #include <stdarg.h>
 
 #include "maths_funcs.h"
-#include "stb_image.h"
+#include "stb_image.c"
 #include "Program.h"
 #define GL_LOG_FILE "gl.log"
 
@@ -177,7 +177,7 @@ static std::vector<tdogl::Shader> LoadShaders() {
 	return shaders;
 }
 
-static void LoadTextures() {
+static GLuint LoadTexture() {
 	int x,y,n;
 	int force_channels = 4;
 	unsigned char* image_data = stbi_load(ResourcePath("texture.jpg").c_str(), &x, &y, &n, force_channels);
@@ -204,10 +204,13 @@ static void LoadTextures() {
 	  }
 	}
 
-	unsigned int tex = 0;
+	GLuint tex = 0;
 	glGenTextures (1, &tex);
-	glActiveTexture (GL_TEXTURE0);
 	glBindTexture (GL_TEXTURE_2D, tex);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D (
 	  GL_TEXTURE_2D,
 	  0,
@@ -219,26 +222,23 @@ static void LoadTextures() {
 	  GL_UNSIGNED_BYTE,
 	  image_data
 	);
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glBindTexture (GL_TEXTURE_2D, 0);
+	return tex;
 }
 
 void glfw_error_callback (int error, const char* description) {
 	gl_log_err("GLFW ERROR: code %i msg: %s\n", error, description);
 }
 
+void AppMain() {
 
-int main() {
 	assert(restart_gl_log());
 
 	gl_log ("starting GLFW\n%s\n", glfwGetVersionString ());
 	glfwSetErrorCallback (glfw_error_callback);
 
 	if (!glfwInit ()) {
-		fprintf (stderr, "ERROR: could not start GLFW3\n");
-		return 1;
+        throw std::runtime_error("ERROR: could not start GLFW3\n");
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -259,9 +259,8 @@ int main() {
 
     if (!window)
     {
-    	fprintf (stderr, "ERROR: could not open window with GLFW3\n");
         glfwTerminate();
-        return -1;
+        throw std::runtime_error("ERROR: could not open window with GLFW3\n");
     }
 
     glfwMakeContextCurrent(window);
@@ -283,7 +282,8 @@ int main() {
 	glFrontFace (GL_CCW); // GL_CCW for counter clock-wise
 
     std::vector<tdogl::Shader> shaders = LoadShaders();
-    LoadTextures();
+    GLuint texture = LoadTexture();
+
 	tdogl::Program* gProgram = new tdogl::Program(shaders);
 
 	vec3 points[] = {
@@ -404,11 +404,71 @@ int main() {
 
 	};
 
-
 	GLuint normals_vbo = 0;
 	glGenBuffers (1, &normals_vbo);
 	glBindBuffer (GL_ARRAY_BUFFER, normals_vbo);
 	glBufferData (GL_ARRAY_BUFFER, numberOfPoints * 3 * sizeof(float), normals, GL_STATIC_DRAW);
+
+	vec2 texture_coords[] = {
+		// Front
+		vec2(1.0f, 0.0f),
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		// Top
+		vec2(1.0f, 0.0f),
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		// Left
+		vec2(1.0f, 0.0f),
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		// Back
+		vec2(1.0f, 0.0f),
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		// Bottom
+		vec2(1.0f, 0.0f),
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		// Right
+		vec2(1.0f, 0.0f),
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+
+		vec2(1.0f, 1.0f),
+		vec2(0.0f, 1.0f),
+		vec2(0.0f, 0.0f),
+	};
+
+	GLuint texture_coords_vbo = 0;
+	glGenBuffers (1, &texture_coords_vbo);
+	glBindBuffer (GL_ARRAY_BUFFER, texture_coords_vbo);
+	glBufferData (GL_ARRAY_BUFFER, numberOfPoints * 2 * sizeof(float), texture_coords, GL_STATIC_DRAW);
 
 	GLuint vao = 0;
 	glGenVertexArrays (1, &vao);
@@ -417,8 +477,11 @@ int main() {
 	glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL);
 	glBindBuffer (GL_ARRAY_BUFFER, normals_vbo);
 	glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL);
+	glBindBuffer (GL_ARRAY_BUFFER, texture_coords_vbo);
+	glVertexAttribPointer (2, 2, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL);
 	glEnableVertexAttribArray (0);
 	glEnableVertexAttribArray (1);
+	glEnableVertexAttribArray (2);
 
 	proj_mat = calcProjMat();
 	view_mat = calcViewMat();
@@ -428,6 +491,7 @@ int main() {
 	int proj_mat_location = gProgram->uniform("projection_mat");
 	int model_mat_location = gProgram->uniform("model_mat");
 	int current_time_location = gProgram->uniform("current_time");
+	int tex_location = gProgram->uniform("tex");
 
     while (!glfwWindowShouldClose(window))
     {
@@ -446,6 +510,10 @@ int main() {
 		glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, proj_mat.m);
 		glUniformMatrix4fv(model_mat_location, 1, GL_FALSE, model_mat.m);
 		glUniform1f(current_time_location, (float)current_seconds);
+
+		glActiveTexture (GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glUniform1i(tex_location, 0);
 
  		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport (0, 0, g_gl_width * 2, g_gl_height * 2);
@@ -504,5 +572,17 @@ int main() {
     }
 
     glfwTerminate();
+}
+
+
+int main() {
+    try {
+        AppMain();
+    } catch (const std::exception& e){
+    	gl_log_err("ERROR: %s\n", e.what());
+        return -1;
+    }
+
     return 0;
 }
+
