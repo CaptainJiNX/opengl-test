@@ -15,15 +15,13 @@ in vec3 fragNormal;
 out vec4 finalColor;
 
 void main() {
-	mat3 normalMatrix = transpose(inverse(mat3(model)));
-	vec3 normal = normalize(normalMatrix * fragNormal);
+	vec3 normal = normalize(transpose(inverse(mat3(model))) * fragNormal);
+	vec3 surfacePos = vec3(model * vec4(fragVert, 1));
+	vec4 surfaceColor = texture(tex, fragTexCoord);
+	vec3 surfaceToLight = normalize(light.position - surfacePos);
 
-	vec3 fragPosition = vec3(model * vec4(fragVert, 1));
+	float diffuseCoefficient = max(0.0, dot(normal, surfaceToLight));
+	vec3 diffuse = diffuseCoefficient * surfaceColor.rgb * light.intensities;
 
-	vec3 surfaceToLight = light.position - fragPosition;
-
-	float brightness = dot(normal, surfaceToLight) / (length(surfaceToLight) * length(normal));
-	brightness = clamp(brightness, 0, 1);
-
-    finalColor = brightness * vec4(light.intensities, 1) * texture(tex, fragTexCoord);
+    finalColor = vec4(diffuse, 1.0);
 }
